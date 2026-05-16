@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        input, textarea, select { width: 300px; padding: 8px; margin: 5px 0; }
+        button { padding: 10px 15px; margin-top: 10px; cursor: pointer; }
+        .task { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+<h1>Task Manager</h1>
+
+<h2>Create Task</h2>
+<input id="title" placeholder="Title"><br>
+<textarea id="description" placeholder="Description"></textarea><br>
+<input id="dueDate" type="date"><br>
+<select id="priority">
+    <option value="LOW">LOW</option>
+    <option value="MEDIUM">MEDIUM</option>
+    <option value="HIGH">HIGH</option>
+</select><br>
+
+<button onclick="createTask()">Create Task</button>
+
+<h2>AI Suggestion</h2>
+<input id="aiTitle" placeholder="Task Title"><br>
+<textarea id="aiDescription" placeholder="Task Description"></textarea><br>
+<button onclick="getAiSuggestion()">Get AI Suggestion</button>
+
+<p id="aiResult"></p>
+
+<h2>All Tasks</h2>
+<div id="taskList"></div>
+
+<script>
+    async function createTask() {
+        const task = {
+            title: document.getElementById("title").value,
+            description: document.getElementById("description").value,
+            dueDate: document.getElementById("dueDate").value,
+            priority: document.getElementById("priority").value,
+            completed: false
+        };
+
+        await fetch("/api/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(task)
+        });
+
+        loadTasks();
+    }
+
+    async function loadTasks() {
+        const response = await fetch("/api/tasks");
+        const tasks = await response.json();
+
+        const list = document.getElementById("taskList");
+        list.innerHTML = "";
+
+        tasks.forEach(t => {
+            list.innerHTML += `
+                <div class="task">
+                    <strong>${t.title}</strong><br>
+                    ${t.description}<br>
+                    Priority: ${t.priority}<br>
+                    Due: ${t.dueDate}<br>
+                </div>
+            `;
+        });
+    }
+
+    async function getAiSuggestion() {
+        const request = {
+            title: document.getElementById("aiTitle").value,
+            description: document.getElementById("aiDescription").value
+        };
+
+        const response = await fetch("/api/ai/suggest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(request)
+        });
+
+        const result = await response.json();
+
+        document.getElementById("aiResult").innerHTML =
+            `<strong>Priority:</strong> ${result.priority}<br>
+             <strong>Estimated Hours:</strong> ${result.estimatedHours}<br>
+             <strong>Suggestions:</strong> ${result.suggestions.join(", ")}`;
+    }
+
+    loadTasks();
+</script>
+
+</body>
+</html>
